@@ -20,7 +20,7 @@ config = function ()
   require("telescope").setup {
     defaults = {
       -- but usually handles directories correctly if trailing slash isn't forced
-      file_ignore_patterns = { "%.metadata", ".cs.metadata" },
+      file_ignore_patterns = { "%.meta", ".cs.meta" },
     },
     extensions = {
       ["ui-select"] = {
