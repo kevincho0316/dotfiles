@@ -58,7 +58,7 @@ return {
             table.sort(line_diags, function(a, b) return a.severity < b.severity end)
 
             -- Only show virtual text for the most severe diagnostic on the line
-            if diagnostic.code ~= line_diags[1].code or diagnostic.message ~= line_diags[1].message then
+            if diagnostic.severity ~= line_diags[1].severity or diagnostic.message ~= line_diags[1].message then
               return nil
             end
 
@@ -95,17 +95,69 @@ return {
       })
 
       vim.lsp.config("clangd", {
-        cmd = {
-          "clangd",
-          "--query-driver=/usr/bin/arm-none-eabi-*,/usr/bin/clang*",
-          "--background-index",
-          "--clang-tidy",
-          "--header-insertion=iwyu",
-        },
+          cmd = {
+              "clangd",
+              "--query-driver=/usr/bin/arm-none-eabi-*,/usr/bin/clang*",
+              "--background-index",
+              "--clang-tidy",
+              "--header-insertion=iwyu",
+          },
+      })
+
+      vim.lsp.config("glsl_analyzer", {
+          capabilities = vim.lsp.protocol.make_client_capabilities(),
       })
 
       vim.lsp.enable({ "lua_ls", "ts_ls", "pyright", "clangd","glsl_analyzer" })
-    end,
+
+      -- glsl_analyzer LSP doesn't emit diagnostics and only does syntax. Bridge glslangValidator
+      -- (semantic checks: undefined symbols, type mismatch, stage rules) into vim.diagnostic.
+      local stage_by_ext = {
+        vert = "vert", vs = "vert",
+        frag = "frag", fs = "frag",
+        geom = "geom", comp = "comp",
+        tesc = "tesc", tese = "tese",
+      }
+      local glsl_ns = vim.api.nvim_create_namespace("glslang_diag")
+      local function glsl_diagnose(bufnr)
+        local fname = vim.api.nvim_buf_get_name(bufnr)
+        if fname == "" then return end
+        local ext = vim.fn.fnamemodify(fname, ":e")
+        local stage = stage_by_ext[ext]
+        if not stage then return end
+        local exe = vim.fn.exepath("glslangValidator")
+        if exe == "" then return end
+        local tmp = vim.fn.tempname() .. "." .. ext
+        vim.fn.writefile(vim.api.nvim_buf_get_lines(bufnr, 0, -1, false), tmp)
+        vim.system({ exe, "-S", stage, tmp }, { text = true }, function(out)
+          local diags = {}
+          for line in ((out.stdout or "") .. (out.stderr or "")):gmatch("[^\r\n]+") do
+            local sev, lnum, msg = line:match("^(ERROR):%s*%d+:(%d+):%s*(.+)$")
+            if not sev then sev, lnum, msg = line:match("^(WARNING):%s*%d+:(%d+):%s*(.+)$") end
+            if sev then
+              table.insert(diags, {
+                lnum = tonumber(lnum) - 1,
+                col = 0,
+                message = msg,
+                severity = sev == "ERROR" and vim.diagnostic.severity.ERROR or vim.diagnostic.severity.WARN,
+                source = "glslangValidator",
+              })
+            end
+          end
+          vim.schedule(function()
+            vim.fn.delete(tmp)
+            if vim.api.nvim_buf_is_valid(bufnr) then
+              vim.diagnostic.set(glsl_ns, bufnr, diags)
+            end
+          end)
+        end)
+      end
+
+      vim.api.nvim_create_autocmd({ "BufReadPost", "BufWritePost", "InsertLeave", "TextChanged" }, {
+        pattern = { "*.vert", "*.frag", "*.geom", "*.comp", "*.tesc", "*.tese", "*.vs", "*.fs" },
+        callback = function(args) glsl_diagnose(args.buf) end,
+      })
+  end,
   },
   -- Completion
   {
