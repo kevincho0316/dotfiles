@@ -1,0 +1,23 @@
+return
+  {
+  dir = '~/project/rack.nvim',
+  config = function()
+    require('rack').setup({
+      keymaps = {
+        ['<leader>rc'] = function() require('rack').commit_quick() end,
+        ['<leader>rC'] = function() require('rack').commit_named() end,
+        ['<leader>rl'] = function() require('rack').log() end,
+        ['<leader>rf'] = function() require('rack').files() end,
+        ['<leader>rs'] = function() require('rack').status() end,
+        ['<leader>rp'] = function() require('rack').push() end,
+        ['<leader>rP'] = function() require('rack').pull() end,
+        ['<leader>rd'] = function() require('rack').diff() end,
+      ['<leader>rD'] = function() require('rack').diff_pick() end,
+        ['<leader>rr'] = function() require('rack').reconstruct() end,
+        ['<leader>rI'] = function() require('rack').init_project() end,
+        ['<leader>r?'] = function() require('rack').server_check() end,
+      },
+    })
+  end,
+}
+
