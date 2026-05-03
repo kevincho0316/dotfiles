@@ -17,7 +17,7 @@ return {
     dependencies = { "williamboman/mason.nvim" },
     config = function()
       require("mason-lspconfig").setup({
-        ensure_installed = { "lua_ls", "ts_ls", "pyright", "clangd" },
+        ensure_installed = { "lua_ls", "ts_ls", "pyright", "clangd" ,"glsl_analyzer"},
         automatic_installation = true,
       })
     end,
@@ -104,7 +104,7 @@ return {
         },
       })
 
-      vim.lsp.enable({ "lua_ls", "ts_ls", "pyright", "clangd" })
+      vim.lsp.enable({ "lua_ls", "ts_ls", "pyright", "clangd","glsl_analyzer" })
     end,
   },
   -- Completion

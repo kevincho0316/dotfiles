@@ -17,6 +17,15 @@ vim.opt.rtp:prepend(lazypath)
 require("vim-options")
 require("lazy").setup("plugins")
 
+vim.filetype.add({
+  extension = {
+    vert = 'glsl',
+    frag = 'glsl',
+    geom = 'glsl',
+    comp = 'glsl',
+  },
+})
+
 -- 4. 기타 단축키
 vim.keymap.set('n', '<C-b>', ':Neotree reveal left<CR>')
 

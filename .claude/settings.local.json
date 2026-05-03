@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(arduino-cli version *)",
+      "Bash(arduino-cli core *)",
+      "Read(//home/jjj/.arduino15/packages/arduino/hardware/avr/**)"
+    ]
+  }
+}
