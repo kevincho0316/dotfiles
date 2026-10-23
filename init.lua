@@ -38,7 +38,6 @@ vim.filetype.add({
     frag = "glsl",
   },
 })
--- 4. 기타 단축키
 vim.keymap.set('n', '<C-b>', ':Neotree reveal left<CR>')
 
 
