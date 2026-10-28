@@ -15,6 +15,8 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 require("vim-options")
+require("remap")
+
 require("lazy").setup("plugins")
 require("nvim-web-devicons").set_icon({
   fs = {
@@ -39,5 +41,5 @@ vim.filetype.add({
   },
 })
 vim.keymap.set('n', '<C-b>', ':Neotree reveal left<CR>')
-
+vim.opt.undofile = true
 
