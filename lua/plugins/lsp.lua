@@ -101,6 +101,42 @@ return {
 
           if client.name == "clangd" then
             map("<leader>h", "<cmd>LspClangdSwitchSourceHeader<CR>", "Switch header/source")
+
+            -- Go to definition, but land in the .cpp, never the header declaration
+            map("<leader>gd", function()
+              local enc = client.offset_encoding
+              local word = vim.fn.expand("<cword>")
+              local is_header = function(uri)
+                return uri:match("%.h$") or uri:match("%.hpp$") or uri:match("%.hh$") or uri:match("%.hxx$")
+              end
+              local params = vim.lsp.util.make_position_params(0, enc)
+              client:request("textDocument/definition", params, function(err, result)
+                if err or not result then return end
+                local locs = vim.islist(result) and result or { result }
+                if #locs == 0 then return end
+                vim.cmd("normal! m'")
+                for _, loc in ipairs(locs) do
+                  if not is_header(loc.uri or loc.targetUri) then
+                    vim.lsp.util.show_document(loc, enc, { focus = true })
+                    return
+                  end
+                end
+                -- Only a header hit (inline/unindexed): jump to its paired source and search there
+                local hdr = locs[1]
+                client:request("textDocument/switchSourceHeader", { uri = hdr.uri or hdr.targetUri }, function(e, src)
+                  if e or not src then
+                    vim.lsp.util.show_document(hdr, enc, { focus = true })
+                    return
+                  end
+                  vim.cmd.edit(vim.fn.fnameescape(vim.uri_to_fname(src)))
+                  vim.fn.cursor(1, 1)
+                  if vim.fn.search("::" .. word .. "\\s*(", "cW") == 0
+                    and vim.fn.search("\\<" .. word .. "\\>", "cW") == 0 then
+                    vim.notify("No definition of " .. word .. " in " .. vim.fn.expand("%:t"), vim.log.levels.WARN)
+                  end
+                end, bufnr)
+              end, bufnr)
+            end, "Go to definition (.cpp)")
           end
 
           -- Highlight other references of the symbol under the cursor
